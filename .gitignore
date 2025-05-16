@@ -1,0 +1,55 @@
+# Node modules (all levels)
+**/node_modules/
+
+# Angular build and cache folders
+**/.angular/
+**/dist/
+**/out-tsc/
+
+# VS Code settings
+**/.vscode/
+
+# Environment files
+**/src/environments/*.ts
+!.env.example
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Compiled output
+*.tsbuildinfo
+
+# Git folder
+.git/
+
+# IDE/project files
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Ignore specific folders
+/client/   # Ignores top-level client folder (C:/client/)
+/client/client/New folder/  # Example of nested custom folders
+
+# Ignore coverage reports
+coverage/
+
+# Ignore temp files
+tmp/
+temp/
+*.tmp
+
+# Ignore npm/yarn/lock files if needed
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Ignore caches
+npm-cache/
+.cache/
+.angular/cache/
