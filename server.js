@@ -21,6 +21,10 @@ const pool = new Pool({
   port: 5432,
 });
 
+app.get("/", (req, res) => {
+  res.send("Hello from Vercel websocket backend!");
+});
+
 // Save message to PostgreSQL
 async function saveMessage(msg) {
   const query = `
