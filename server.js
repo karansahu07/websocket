@@ -21,10 +21,6 @@ const pool = new Pool({
   port: 5432,
 });
 
-app.get("/", (req, res) => {
-  res.send("Hello from Vercel websocket backend!");
-});
-
 // Save message to PostgreSQL
 async function saveMessage(msg) {
   const query = `
@@ -125,16 +121,16 @@ io.on('connection', (socket) => {
         }
       });
 
-      // Save message to DB
-      saveMessage(messagePayload)
-        .then(savedMsg => {
-          if (savedMsg) {
-            console.log('Message saved with id:', savedMsg.message_id || savedMsg.id);
-          }
-        })
-        .catch(err => {
-          console.error('Error saving message:', err);
-        });
+      // // Save message to DB
+      // saveMessage(messagePayload)
+      //   .then(savedMsg => {
+      //     if (savedMsg) {
+      //       console.log('Message saved with id:', savedMsg.message_id || savedMsg.id);
+      //     }
+      //   })
+      //   .catch(err => {
+      //     console.error('Error saving message:', err);
+      //   });
 
     } catch (error) {
       console.error('Error processing chatMessage:', error);
