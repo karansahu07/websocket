@@ -96,6 +96,10 @@ io.on('connection', (socket) => {
     socket.emit('joined', 'Connected to chat');
   });
 
+  app.get("/", (req, res) => {
+  res.send("Hello from Vercel websocket backend!");
+  });
+
   // Handle incoming message
   socket.on('chatMessage', (msg) => {
     try {
