@@ -12,13 +12,35 @@ const io = socketIo(server, {
   },
 });
 
-// PostgreSQL Pool
+// // PostgreSQL Pool
+// const pool = new Pool({
+//   user: 'postgres',
+//   host: 'localhost',
+//   database: 'telldemm',
+//   password: 'Admin@123',
+//   port: 5432,
+// });
+
+// // PostgreSQL Pool
+// const pool = new Pool({
+//   user: 'neondb_owner',
+//   host: 'ap-southeast-1.aws.neon.tech',
+//   database: 'neondb',
+//   password: 'npg_W20RdBZDYpvH',
+//   port: 5432,
+//   ssl: {
+//     rejectUnauthorized: false, 
+//   },
+// });
+
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'telldemm',
-  password: 'Admin@123',
+  user: 'neondb_owner',
+  host: 'ap-southeast-1.aws.neon.tech',
+  database: 'neondb',
+  password: 'npg_W20RdBZDYpvH',
   port: 5432,
+  ssl: true, // Enable SSL
+  connectionString: process.env.DATABASE_URL || `postgresql://neondb_owner:npg_W20RdBZDYpvH@ep-white-shadow-a1wu6egm-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`,
 });
 
 // Save message to PostgreSQL
@@ -121,16 +143,16 @@ io.on('connection', (socket) => {
         }
       });
 
-      // // Save message to DB
-      // saveMessage(messagePayload)
-      //   .then(savedMsg => {
-      //     if (savedMsg) {
-      //       console.log('Message saved with id:', savedMsg.message_id || savedMsg.id);
-      //     }
-      //   })
-      //   .catch(err => {
-      //     console.error('Error saving message:', err);
-      //   });
+      // Save message to DB
+      saveMessage(messagePayload)
+        .then(savedMsg => {
+          if (savedMsg) {
+            console.log('Message saved with id:', savedMsg.message_id || savedMsg.id);
+          }
+        })
+        .catch(err => {
+          console.error('Error saving message:', err);
+        });
 
     } catch (error) {
       console.error('Error processing chatMessage:', error);
@@ -147,6 +169,19 @@ io.on('connection', (socket) => {
       userSocketMap.delete(userId);
     }
   });
+});
+
+
+
+// In-memory "database" for dummy data
+let users = [
+  { id: 1, name: 'John Doe', email: 'john@example.com' },
+  { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
+];
+
+// Get all users
+app.get('/api/users', (req, res) => {
+  res.status(200).json(users);
 });
 
 const PORT = process.env.PORT || 3000;
