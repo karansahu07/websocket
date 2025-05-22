@@ -178,14 +178,25 @@ io.on('connection', (socket) => {
 
 
 // In-memory "database" for dummy data
-let users = [
-  { id: 1, name: 'John Doe', email: 'john@example.com' },
-  { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
-];
+// let users = [
+//   { id: 1, name: 'John Doe', email: 'john@example.com' },
+//   { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
+// ];
 
 // Get all users
-app.get('/api/users', (req, res) => {
-  res.status(200).json(users);
+// app.get('/api/users', (req, res) => {
+//   res.status(200).json(users);
+// });
+
+// Get all users
+app.get('/api/users', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM users');
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Error fetching users:', err.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
