@@ -12,6 +12,9 @@ const io = socketIo(server, {
   },
 });
 
+// ✅ Middleware to parse JSON bodies
+app.use(express.json());
+
 
 const pool = new Pool({
   user: process.env.DB_USER,
@@ -179,28 +182,7 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// Mock Insert User
-// app.post('/api/users', async (req, res) => {
-//   try {
-//     const { name, email } = req.body;
-
-//     // Simple validation
-//     if (!name || !email) {
-//       return res.status(400).json({ message: 'Name and email are required' });
-//     }
-
-//     const result = await pool.query(
-//       'INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *',
-//       [name, email]
-//     );
-
-//     res.status(201).json(result.rows[0]);
-//   } catch (err) {
-//     console.error('Error inserting user:', err.message);
-//     res.status(500).json({ message: 'Internal server error' });
-//   }
-// });
-
+// Routes here
 app.post('/api/users', async (req, res) => {
   try {
     const { name, phone_number, email, profile_picture_url, status } = req.body;
