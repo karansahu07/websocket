@@ -12,33 +12,13 @@ const io = socketIo(server, {
   },
 });
 
-// // PostgreSQL Pool
-// const pool = new Pool({
-//   user: 'postgres',
-//   host: 'localhost',
-//   database: 'telldemm',
-//   password: 'Admin@123',
-//   port: 5432,
-// });
-
-// // PostgreSQL Pool
-// const pool = new Pool({
-//   user: 'neondb_owner',
-//   host: 'ap-southeast-1.aws.neon.tech',
-//   database: 'neondb',
-//   password: 'npg_W20RdBZDYpvH',
-//   port: 5432,
-//   ssl: {
-//     rejectUnauthorized: false, 
-//   },
-// });
 
 const pool = new Pool({
-  user: 'neondb_owner',
-  host: 'ap-southeast-1.aws.neon.tech',
-  database: 'neondb',
-  password: 'npg_W20RdBZDYpvH',
-  port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
   ssl: true, // Enable SSL
   connectionString: process.env.DATABASE_URL || `postgresql://neondb_owner:npg_W20RdBZDYpvH@ep-white-shadow-a1wu6egm-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`,
 });
@@ -198,6 +178,56 @@ app.get('/api/users', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
+// Mock Insert User
+// app.post('/api/users', async (req, res) => {
+//   try {
+//     const { name, email } = req.body;
+
+//     // Simple validation
+//     if (!name || !email) {
+//       return res.status(400).json({ message: 'Name and email are required' });
+//     }
+
+//     const result = await pool.query(
+//       'INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *',
+//       [name, email]
+//     );
+
+//     res.status(201).json(result.rows[0]);
+//   } catch (err) {
+//     console.error('Error inserting user:', err.message);
+//     res.status(500).json({ message: 'Internal server error' });
+//   }
+// });
+
+app.post('/api/users', async (req, res) => {
+  try {
+    const { name, phone_number, email, profile_picture_url, status } = req.body;
+
+    if (!name || !phone_number) {
+      return res.status(400).json({ message: 'Name and phone number are required' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO users (name, phone_number, email, profile_picture_url, status)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [name, phone_number, email || null, profile_picture_url || null, status || null]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error inserting user:', err.message);
+    if (err.code === '23505') {
+      res.status(409).json({ message: 'Phone number or email already exists' });
+    } else {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+});
+
+
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
