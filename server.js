@@ -22,8 +22,8 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
-  ssl: true, // Enable SSL
-  connectionString: process.env.DATABASE_URL || `postgresql://neondb_owner:npg_W20RdBZDYpvH@ep-white-shadow-a1wu6egm-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`,
+  ssl: false, // Enable SSL
+  connectionString: process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_W20RdBZDYpvH@ep-white-shadow-a1wu6egm-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require',
 });
 
 // Save message to PostgreSQL
@@ -206,6 +206,76 @@ app.post('/api/users', async (req, res) => {
     } else {
       res.status(500).json({ message: 'Internal server error' });
     }
+  }
+});
+
+
+//-------------otp apis--------------------
+
+const crypto = require('crypto'); // for secure OTP
+const dayjs = require('dayjs');
+
+// Helper to generate 6-digit OTP
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+app.post('/api/send-otp', async (req, res) => {
+  const { phone_number } = req.body;
+
+  if (!phone_number) {
+    return res.status(400).json({ message: 'Phone number is required' });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    const otp = generateOTP();
+    const expiresAt = dayjs().add(5, 'minute').toISOString(); // 5 min expiry
+
+    await client.query('BEGIN');
+
+    // 1. Check if user exists
+    const userResult = await client.query(
+      'SELECT * FROM users WHERE phone_number = $1',
+      [phone_number]
+    );
+
+    if (userResult.rows.length === 0) {
+      // Insert new user (default name or status can be adjusted)
+      await client.query(
+        'INSERT INTO users (name, phone_number) VALUES ($1, $2)',
+        ['User', phone_number]
+      );
+    } else {
+      // Update status (if needed)
+      await client.query(
+        'UPDATE users SET status = $1 WHERE phone_number = $2',
+        ['pending_otp', phone_number]
+      );
+    }
+
+    // 2. UPSERT OTP
+    await client.query(
+      `INSERT INTO otp_requests (phone_number, otp_code, expires_at)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (phone_number)
+       DO UPDATE SET otp_code = EXCLUDED.otp_code, is_verified = false, created_at = CURRENT_TIMESTAMP, expires_at = EXCLUDED.expires_at`,
+      [phone_number, otp, expiresAt]
+    );
+
+    await client.query('COMMIT');
+
+
+    console.log(`Sending OTP ${otp} to ${phone_number}`);
+
+    res.status(200).json({ message: 'OTP sent successfully', phone_number, otp }); // remove otp in prod
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error sending OTP:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  } finally {
+    client.release();
   }
 });
 
