@@ -253,18 +253,17 @@ app.post('/api/send-otp', async (req, res) => {
   const { phone_number } = req.body;
 
   if (!phone_number) {
-    return res.status(400).json({ message: 'Phone number is required' });
+    return res.status(400).json({ status: false, message: 'Phone number is required' });
   }
 
   const client = await pool.connect();
 
   try {
     const otp = generateOTP();
-    const expiresAt = dayjs().add(5, 'minute').toISOString(); // 5 min expiry
+    const expiresAt = dayjs().add(5, 'minute').toISOString();
 
     await client.query('BEGIN');
 
-    // Check if user exists
     const userResult = await client.query(
       'SELECT * FROM users WHERE phone_number = $1',
       [phone_number]
@@ -282,7 +281,6 @@ app.post('/api/send-otp', async (req, res) => {
       );
     }
 
-    // UPSERT OTP - requires UNIQUE constraint on otp_requests.phone_number
     await client.query(
       `INSERT INTO otp_requests (phone_number, otp_code, expires_at)
        VALUES ($1, $2, $3)
@@ -299,12 +297,15 @@ app.post('/api/send-otp', async (req, res) => {
 
     console.log(`Sending OTP ${otp} to ${phone_number}`);
 
-    // In production, do NOT send OTP back in response
-    res.status(200).json({ message: 'OTP sent successfully', phone_number });
+    res.status(200).json({
+      status: true,
+      message: 'OTP sent successfully',
+      phone_number,
+    });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error sending OTP:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ status: false, message: 'Internal server error' });
   } finally {
     client.release();
   }
@@ -315,7 +316,10 @@ app.post('/api/verify-otp', async (req, res) => {
   const { phone_number, otp_code } = req.body;
 
   if (!phone_number || !otp_code) {
-    return res.status(400).json({ message: 'Phone number and OTP are required' });
+    return res.status(400).json({
+      status: false,
+      message: 'Phone number and OTP are required',
+    });
   }
 
   const client = await pool.connect();
@@ -331,10 +335,12 @@ app.post('/api/verify-otp', async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
+      return res.status(400).json({
+        status: false,
+        message: 'Invalid or expired OTP',
+      });
     }
 
-    // Mark OTP as verified
     await client.query(
       `UPDATE otp_requests 
        SET is_verified = true 
@@ -342,7 +348,6 @@ app.post('/api/verify-otp', async (req, res) => {
       [phone_number, otp_code]
     );
 
-    // Update user status (optional)
     await client.query(
       `UPDATE users 
        SET status = $1 
@@ -350,14 +355,15 @@ app.post('/api/verify-otp', async (req, res) => {
       ['verified', phone_number]
     );
 
-    res.status(200).json({ message: 'OTP verified successfully' });
+    res.status(200).json({ status: true, message: 'OTP verified successfully' });
   } catch (err) {
     console.error('Error verifying OTP:', err.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ status: false, message: 'Internal server error' });
   } finally {
     client.release();
   }
 });
+
 
 
 
