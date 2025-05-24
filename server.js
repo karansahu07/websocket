@@ -212,12 +212,12 @@ app.post('/api/users', async (req, res) => {
 
 //-------------otp apis--------------------
 
-const crypto = require('crypto'); // for secure OTP
+const crypto = require('crypto'); // for secure OTP (if you want to improve OTP generation)
 const dayjs = require('dayjs');
 
-// Helper to generate 6-digit OTP
 function generateOTP() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  // Secure random 6-digit OTP
+  return crypto.randomInt(100000, 999999).toString();
 }
 
 app.post('/api/send-otp', async (req, res) => {
@@ -235,41 +235,43 @@ app.post('/api/send-otp', async (req, res) => {
 
     await client.query('BEGIN');
 
-    // 1. Check if user exists
+    // Check if user exists
     const userResult = await client.query(
       'SELECT * FROM users WHERE phone_number = $1',
       [phone_number]
     );
 
     if (userResult.rows.length === 0) {
-      // Insert new user (default name or status can be adjusted)
       await client.query(
         'INSERT INTO users (name, phone_number) VALUES ($1, $2)',
         ['User', phone_number]
       );
     } else {
-      // Update status (if needed)
       await client.query(
         'UPDATE users SET status = $1 WHERE phone_number = $2',
         ['pending_otp', phone_number]
       );
     }
 
-    // 2. UPSERT OTP
+    // UPSERT OTP - requires UNIQUE constraint on otp_requests.phone_number
     await client.query(
       `INSERT INTO otp_requests (phone_number, otp_code, expires_at)
        VALUES ($1, $2, $3)
        ON CONFLICT (phone_number)
-       DO UPDATE SET otp_code = EXCLUDED.otp_code, is_verified = false, created_at = CURRENT_TIMESTAMP, expires_at = EXCLUDED.expires_at`,
+       DO UPDATE SET
+         otp_code = EXCLUDED.otp_code,
+         is_verified = false,
+         created_at = CURRENT_TIMESTAMP,
+         expires_at = EXCLUDED.expires_at`,
       [phone_number, otp, expiresAt]
     );
 
     await client.query('COMMIT');
 
-
     console.log(`Sending OTP ${otp} to ${phone_number}`);
 
-    res.status(200).json({ message: 'OTP sent successfully', phone_number, otp }); // remove otp in prod
+    // In production, do NOT send OTP back in response
+    res.status(200).json({ message: 'OTP sent successfully', phone_number });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error sending OTP:', error);
@@ -278,6 +280,9 @@ app.post('/api/send-otp', async (req, res) => {
     client.release();
   }
 });
+
+
+
 
 
 
