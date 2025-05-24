@@ -22,7 +22,7 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
-  ssl: false, // Enable SSL
+  ssl: true, // Enable SSL
   connectionString: process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_W20RdBZDYpvH@ep-white-shadow-a1wu6egm-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require',
 });
 
