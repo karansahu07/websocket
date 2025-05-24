@@ -172,15 +172,44 @@ io.on('connection', (socket) => {
 // });
 
 // Get all users
+// app.get('/api/users', async (req, res) => {
+//   try {
+//     const result = await pool.query('SELECT * FROM users');
+//     res.status(200).json(result.rows);
+//   } catch (err) {
+//     console.error('Error fetching users:', err.message);
+//     res.status(500).json({ message: 'Internal server error' });
+//   }
+// });
+
+// Get all users with OTP info (for debugging)
 app.get('/api/users', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM users');
+    const result = await pool.query(`
+      SELECT 
+        u.user_id,
+        u.name,
+        u.phone_number,
+        u.email,
+        u.status,
+        u.created_at AS user_created_at,
+        o.otp_id,
+        o.otp_code,
+        o.is_verified,
+        o.created_at AS otp_created_at,
+        o.expires_at
+      FROM users u
+      LEFT JOIN otp_requests o ON u.phone_number = o.phone_number
+      ORDER BY u.user_id DESC
+    `);
+
     res.status(200).json(result.rows);
   } catch (err) {
     console.error('Error fetching users:', err.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 // Routes here
 app.post('/api/users', async (req, res) => {
