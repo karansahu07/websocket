@@ -17,7 +17,7 @@ const io = socketIo(server, {
 
 // ✅ Middleware to parse JSON bodies
 app.use(express.json());
-// app.use(cors());
+app.use(cors());
 
 const pool = new Pool({
   user: process.env.DB_USER,
