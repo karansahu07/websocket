@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const cors = require('cors');
 const socketIo = require('socket.io');
 const { Pool } = require('pg');
 
@@ -9,12 +10,14 @@ const io = socketIo(server, {
   cors: {
     origin: 'http://localhost:8100',
     methods: ['GET', 'POST'],
+    credentials: true
   },
 });
+//  app.options('*', cors());
 
 // ✅ Middleware to parse JSON bodies
 app.use(express.json());
-
+app.use(cors());
 
 const pool = new Pool({
   user: process.env.DB_USER,
