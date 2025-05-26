@@ -253,7 +253,7 @@ function generateOTP() {
 }
 
 app.post('/api/send-otp', async (req, res) => {
-  const { phone:phone_number } = req.body;
+  const { phone_number } = req.body;
   console.log('Incoming body:', req.body);
 
   if (!phone_number) {
@@ -317,7 +317,7 @@ app.post('/api/send-otp', async (req, res) => {
 
 
 app.post('/api/verify-otp', async (req, res) => {
-  const { phone:phone_number, otp:otp_code } = req.body;
+  const { phone_number, otp_code } = req.body;
 
   if (!phone_number || !otp_code) {
     return res.status(400).json({
